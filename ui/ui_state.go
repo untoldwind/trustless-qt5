@@ -1,18 +1,35 @@
 package ui
 
-import "sync"
+import (
+	"context"
+	"sync"
+
+	"github.com/untoldwind/trustless/api"
+	"github.com/untoldwind/trustless/secrets"
+)
 
 type uiState struct {
-	locked bool
+	locked  bool
+	entries []*api.SecretEntry
 }
 
-type uiStoreListener func(prev, next uiState)
-type uiStoreAction func(prev uiState) uiState
+type uiStoreListener func(prev, next *uiState)
+type uiStoreAction func(prev *uiState) *uiState
 
 type uiStore struct {
 	lock      sync.Mutex
 	current   uiState
 	listeners []uiStoreListener
+}
+
+func initialUiState(secrets secrets.Secrets) (*uiState, error) {
+	status, err := secrets.Status(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return &uiState{
+		locked: status.Locked,
+	}, nil
 }
 
 func (s *uiStore) addListener(listener uiStoreListener) {
@@ -26,9 +43,11 @@ func (s *uiStore) dispatch(action uiStoreAction) {
 	defer s.lock.Unlock()
 
 	prev := s.current
-	s.current = action(prev)
+	if next := action(&s.current); next != nil {
+		s.current = *next
 
-	for _, listener := range s.listeners {
-		listener(prev, s.current)
+		for _, listener := range s.listeners {
+			listener(&prev, &s.current)
+		}
 	}
 }

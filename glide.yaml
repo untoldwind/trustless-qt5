@@ -2,4 +2,7 @@ package: github.com/untoldwind/trustless-qt5
 import:
 - package: github.com/untoldwind/trustless
   subpackages:
+  - api
   - secrets
+ignore:
+- github.com/therecipe/qt

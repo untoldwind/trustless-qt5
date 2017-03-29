@@ -1,27 +1,35 @@
 package ui
 
 import (
+	"github.com/leanovate/microtools/logging"
 	"github.com/therecipe/qt/core"
 	"github.com/therecipe/qt/widgets"
+	"github.com/untoldwind/trustless/secrets"
 )
 
 type MainWindow struct {
-	store *uiStore
+	logger  logging.Logger
+	store   *uiStore
+	secrets secrets.Secrets
 
 	window  *widgets.QMainWindow
 	stacked *widgets.QStackedWidget
 }
 
-func NewMainWindow() *MainWindow {
+func NewMainWindow(secrets secrets.Secrets, logger logging.Logger) (*MainWindow, error) {
+	initialState, err := initialUiState(secrets)
+	if err != nil {
+		return nil, err
+	}
 	mainWindow := &MainWindow{
+		logger:  logger.WithField("package", "ui"),
+		secrets: secrets,
 		store: &uiStore{
-			current: uiState{
-				locked: true,
-			},
+			current: *initialState,
 		},
 	}
 	mainWindow.init()
-	return mainWindow
+	return mainWindow, err
 }
 
 func (w *MainWindow) Show() {
@@ -36,7 +44,7 @@ func (w *MainWindow) init() {
 	w.stacked = widgets.NewQStackedWidget(w.window)
 	w.window.SetCentralWidget(w.stacked)
 
-	w.stacked.AddWidget(w.newUnlockFrame(w.store))
+	w.stacked.AddWidget(w.newUnlockFrame())
 
 	layout := widgets.NewQVBoxLayout()
 	centralWidget := widgets.NewQWidget(nil, 0)
@@ -50,9 +58,10 @@ func (w *MainWindow) init() {
 	layout.AddWidget(button, 0, core.Qt__AlignCenter)
 
 	w.store.addListener(w.onStateChange)
+	w.onStateChange(&w.store.current, &w.store.current)
 }
 
-func (w *MainWindow) onStateChange(prev, next uiState) {
+func (w *MainWindow) onStateChange(prev, next *uiState) {
 	if next.locked {
 		w.stacked.SetCurrentIndex(0)
 	} else {
