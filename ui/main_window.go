@@ -22,7 +22,7 @@ func NewMainWindow(secrets secrets.Secrets, logger logging.Logger) (*MainWindow,
 		return nil, err
 	}
 	mainWindow := &MainWindow{
-		logger:  logger.WithField("package", "ui"),
+		logger:  logger.WithField("package", "ui").WithField("component", "mainWindow"),
 		secrets: secrets,
 		store: &uiStore{
 			current: *initialState,
@@ -44,7 +44,7 @@ func (w *MainWindow) init() {
 	w.stacked = widgets.NewQStackedWidget(w.window)
 	w.window.SetCentralWidget(w.stacked)
 
-	w.stacked.AddWidget(w.newUnlockFrame())
+	w.stacked.AddWidget(newUnlockFrame(w.store, w.secrets, w.logger))
 
 	layout := widgets.NewQVBoxLayout()
 	centralWidget := widgets.NewQWidget(nil, 0)

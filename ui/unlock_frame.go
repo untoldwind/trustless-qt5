@@ -2,16 +2,34 @@ package ui
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/leanovate/microtools/logging"
 	"github.com/therecipe/qt/core"
 	"github.com/therecipe/qt/gui"
 	"github.com/therecipe/qt/widgets"
+	"github.com/untoldwind/trustless/secrets"
 )
 
-func (w *MainWindow) newUnlockFrame() widgets.QWidget_ITF {
+type unlockFrame struct {
+	*widgets.QWidget
+
+	logger  logging.Logger
+	store   *uiStore
+	secrets secrets.Secrets
+}
+
+func newUnlockFrame(store *uiStore, secrets secrets.Secrets, logger logging.Logger) *unlockFrame {
+	w := &unlockFrame{
+		QWidget: widgets.NewQWidget(nil, 0),
+
+		store:   store,
+		secrets: secrets,
+		logger:  logger.WithField("component", "unlockframe"),
+	}
+
 	layout := widgets.NewQHBoxLayout()
-	central := widgets.NewQWidget(nil, 0)
-	central.SetLayout(layout)
+	w.SetLayout(layout)
 
 	layout.AddStretch(1)
 	passphraseLayout := widgets.NewQVBoxLayout()
@@ -38,5 +56,21 @@ func (w *MainWindow) newUnlockFrame() widgets.QWidget_ITF {
 		}
 	})
 
-	return central
+	popup := newPopupWidget(w)
+
+	w.ConnectPaintEvent(func(event *gui.QPaintEvent) {
+		pos := passphrase.MapFromGlobal(core.NewQPoint2(0, 0))
+		posX := -pos.X()
+		posY := -pos.Y()
+		fmt.Println(posX)
+		fmt.Println(posY)
+
+		fmt.Println(popup.Width())
+		fmt.Println(popup.Height())
+
+		popup.SetGeometry(core.NewQRect4(posX+passphrase.Width(), posY, popup.Width(), popup.Height()))
+		popup.Show()
+	})
+
+	return w
 }
