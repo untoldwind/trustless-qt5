@@ -12,8 +12,9 @@ import (
 
 type entryList struct {
 	*widgets.QWidget
+	filter         *widgets.QLineEdit
 	entryList      *widgets.QListView
-	entryListModel *gui.QStandardItemModel
+	entryListModel *entryListModel
 
 	logger  logging.Logger
 	store   *uiStore
@@ -23,8 +24,9 @@ type entryList struct {
 func newEntryList(store *uiStore, secrets secrets.Secrets, logger logging.Logger) *entryList {
 	w := &entryList{
 		QWidget:        widgets.NewQWidget(nil, 0),
+		filter:         widgets.NewQLineEdit(nil),
 		entryList:      widgets.NewQListView(nil),
-		entryListModel: gui.NewQStandardItemModel(nil),
+		entryListModel: newEntryListModel(),
 
 		store:   store,
 		secrets: secrets,
@@ -32,10 +34,14 @@ func newEntryList(store *uiStore, secrets secrets.Secrets, logger logging.Logger
 	}
 
 	layout := widgets.NewQVBoxLayout2(w)
-	layout.AddWidget(w.entryList, 0, 0)
+	layout.AddWidget(w.filter, 0, 0)
+	layout.AddWidget(w.entryList, 1, 0)
 
+	w.entryList.SetSelectionMode(widgets.QAbstractItemView__SingleSelection)
 	w.entryList.SetModel(w.entryListModel)
-	w.entryListModel.SetSortRole(int(core.Qt__DisplayRole))
+	w.entryList.ConnectCurrentChanged(w.onCurrentChanged)
+
+	w.filter.ConnectKeyReleaseEvent(w.onFilterChange)
 
 	w.store.addListener(w.onStateChange)
 	if !w.store.current.locked {
@@ -45,25 +51,20 @@ func newEntryList(store *uiStore, secrets secrets.Secrets, logger logging.Logger
 	return w
 }
 
+func (w *entryList) onFilterChange(event *gui.QKeyEvent) {
+	w.store.dispatch(actionUpdateEntryFilter(w.filter.Text()))
+}
+
+func (w *entryList) onCurrentChanged(current *core.QModelIndex, previous *core.QModelIndex) {
+	w.store.dispatch(actionSelectEntry(current.Data(int(entityIDRole)).ToString()))
+}
+
 func (w *entryList) onStateChange(prev, next *uiState) {
 	if !next.locked && prev.locked {
 		w.refresh()
 	}
-	for i, entry := range next.entries {
-		var listItem *gui.QStandardItem
-		if i < w.entryListModel.RowCount(core.NewQModelIndex()) {
-			listItem = w.entryListModel.Item(i, 0)
-		} else {
-			listItem = gui.NewQStandardItem()
-			w.entryListModel.AppendRow([]*gui.QStandardItem{listItem})
-		}
-		listItem.SetText(entry.Name)
-		listItem.SetData(core.NewQVariant14(entry.Name), int(core.Qt__DisplayRole))
-	}
-	if w.entryListModel.RowCount(core.NewQModelIndex()) > len(next.entries) {
-		w.entryListModel.RemoveRows(len(next.entries), w.entryListModel.RowCount(core.NewQModelIndex())-len(next.entries), nil)
-	}
-	w.entryListModel.Sort(0, core.Qt__AscendingOrder)
+	w.entryListModel.updateEntries(next.visibleEntries)
+	w.entryList.SetCurrentIndex(w.entryListModel.indexOf(next.selectedEntry))
 }
 
 func (w *entryList) refresh() {

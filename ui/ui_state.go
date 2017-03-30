@@ -10,8 +10,11 @@ import (
 )
 
 type uiState struct {
-	locked  bool
-	entries []*api.SecretEntry
+	locked         bool
+	allEntries     []*api.SecretEntry
+	visibleEntries []*api.SecretEntry
+	selectedEntry  *api.SecretEntry
+	entryFilter    string
 }
 
 type uiStoreListener func(prev, next *uiState)
