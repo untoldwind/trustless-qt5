@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/leanovate/microtools/logging"
 	"github.com/therecipe/qt/core"
@@ -54,22 +53,6 @@ func newUnlockFrame(store *uiStore, secrets secrets.Secrets, logger logging.Logg
 		} else {
 			w.store.dispatch(actionUnlock)
 		}
-	})
-
-	popup := newPopupWidget(w)
-
-	w.ConnectPaintEvent(func(event *gui.QPaintEvent) {
-		pos := passphrase.MapFromGlobal(core.NewQPoint2(0, 0))
-		posX := -pos.X()
-		posY := -pos.Y()
-		fmt.Println(posX)
-		fmt.Println(posY)
-
-		fmt.Println(popup.Width())
-		fmt.Println(popup.Height())
-
-		popup.SetGeometry(core.NewQRect4(posX+passphrase.Width(), posY, popup.Width(), popup.Height()))
-		popup.Show()
 	})
 
 	return w

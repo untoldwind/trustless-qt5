@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/leanovate/microtools/logging"
 	"github.com/untoldwind/trustless/api"
 	"github.com/untoldwind/trustless/secrets"
 )
@@ -18,18 +19,28 @@ type uiStoreAction func(prev *uiState) *uiState
 
 type uiStore struct {
 	lock      sync.Mutex
+	logger    logging.Logger
 	current   uiState
 	listeners []uiStoreListener
+	actions   chan uiStoreAction
 }
 
-func initialUiState(secrets secrets.Secrets) (*uiState, error) {
+func newUIStore(secrets secrets.Secrets, logger logging.Logger) (*uiStore, error) {
 	status, err := secrets.Status(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	return &uiState{
-		locked: status.Locked,
-	}, nil
+	store := &uiStore{
+		logger: logger.WithField("package", "ui").WithField("component", "uiStore"),
+		current: uiState{
+			locked: status.Locked,
+		},
+		actions: make(chan uiStoreAction, 100),
+	}
+
+	go store.loop()
+
+	return store, nil
 }
 
 func (s *uiStore) addListener(listener uiStoreListener) {
@@ -39,6 +50,14 @@ func (s *uiStore) addListener(listener uiStoreListener) {
 }
 
 func (s *uiStore) dispatch(action uiStoreAction) {
+	select {
+	case s.actions <- action:
+	default:
+		s.logger.Error("Action queue exhausted")
+	}
+}
+
+func (s *uiStore) runAction(action uiStoreAction) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -49,5 +68,11 @@ func (s *uiStore) dispatch(action uiStoreAction) {
 		for _, listener := range s.listeners {
 			listener(&prev, &s.current)
 		}
+	}
+}
+
+func (s *uiStore) loop() {
+	for action := range s.actions {
+		s.runAction(action)
 	}
 }

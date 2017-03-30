@@ -8,41 +8,31 @@ import (
 )
 
 type MainWindow struct {
+	*widgets.QMainWindow
+
 	logger  logging.Logger
 	store   *uiStore
 	secrets secrets.Secrets
 
-	window  *widgets.QMainWindow
 	stacked *widgets.QStackedWidget
 }
 
 func NewMainWindow(secrets secrets.Secrets, logger logging.Logger) (*MainWindow, error) {
-	initialState, err := initialUiState(secrets)
+	uiStore, err := newUIStore(secrets, logger)
 	if err != nil {
 		return nil, err
 	}
-	mainWindow := &MainWindow{
-		logger:  logger.WithField("package", "ui").WithField("component", "mainWindow"),
-		secrets: secrets,
-		store: &uiStore{
-			current: *initialState,
-		},
+	w := &MainWindow{
+		QMainWindow: widgets.NewQMainWindow(nil, 0),
+		logger:      logger.WithField("package", "ui").WithField("component", "mainWindow"),
+		secrets:     secrets,
+		store:       uiStore,
 	}
-	mainWindow.init()
-	return mainWindow, err
-}
 
-func (w *MainWindow) Show() {
-	w.window.Show()
-}
-
-func (w *MainWindow) init() {
-	w.window = widgets.NewQMainWindow(nil, 0)
-	w.window.SetWindowTitle("Trustless")
-	w.window.SetMinimumSize2(200, 200)
-
-	w.stacked = widgets.NewQStackedWidget(w.window)
-	w.window.SetCentralWidget(w.stacked)
+	w.SetWindowTitle("Trustless")
+	w.SetMinimumSize2(200, 200)
+	w.stacked = widgets.NewQStackedWidget(w)
+	w.SetCentralWidget(w.stacked)
 
 	w.stacked.AddWidget(newUnlockFrame(w.store, w.secrets, w.logger))
 
@@ -59,6 +49,8 @@ func (w *MainWindow) init() {
 
 	w.store.addListener(w.onStateChange)
 	w.onStateChange(&w.store.current, &w.store.current)
+
+	return w, err
 }
 
 func (w *MainWindow) onStateChange(prev, next *uiState) {
