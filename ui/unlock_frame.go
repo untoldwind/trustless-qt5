@@ -27,13 +27,11 @@ func newUnlockFrame(store *uiStore, secrets secrets.Secrets, logger logging.Logg
 		logger:  logger.WithField("component", "unlockframe"),
 	}
 
-	layout := widgets.NewQHBoxLayout()
-	w.SetLayout(layout)
+	layout := widgets.NewQHBoxLayout2(w)
 
 	layout.AddStretch(1)
-	passphraseLayout := widgets.NewQVBoxLayout()
 	passphraseContainer := widgets.NewQWidget(nil, 0)
-	passphraseContainer.SetLayout(passphraseLayout)
+	passphraseLayout := widgets.NewQVBoxLayout2(passphraseContainer)
 	layout.AddWidget(passphraseContainer, 3, core.Qt__AlignVCenter)
 	layout.AddStretch(1)
 

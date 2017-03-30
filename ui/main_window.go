@@ -2,7 +2,6 @@ package ui
 
 import (
 	"github.com/leanovate/microtools/logging"
-	"github.com/therecipe/qt/core"
 	"github.com/therecipe/qt/widgets"
 	"github.com/untoldwind/trustless/secrets"
 )
@@ -35,17 +34,7 @@ func NewMainWindow(secrets secrets.Secrets, logger logging.Logger) (*MainWindow,
 	w.SetCentralWidget(w.stacked)
 
 	w.stacked.AddWidget(newUnlockFrame(w.store, w.secrets, w.logger))
-
-	layout := widgets.NewQVBoxLayout()
-	centralWidget := widgets.NewQWidget(nil, 0)
-	centralWidget.SetLayout(layout)
-	w.stacked.AddWidget(centralWidget)
-
-	button := widgets.NewQPushButton2("Click me!", nil)
-	button.ConnectClicked(func(checked bool) {
-		w.store.dispatch(actionLock)
-	})
-	layout.AddWidget(button, 0, core.Qt__AlignCenter)
+	w.stacked.AddWidget(newSecretsFrame(w.store, w.secrets, w.logger))
 
 	w.store.addListener(w.onStateChange)
 	w.onStateChange(&w.store.current, &w.store.current)
