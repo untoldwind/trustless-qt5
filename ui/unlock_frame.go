@@ -7,24 +7,21 @@ import (
 	"github.com/therecipe/qt/core"
 	"github.com/therecipe/qt/gui"
 	"github.com/therecipe/qt/widgets"
-	"github.com/untoldwind/trustless/secrets"
 )
 
 type unlockFrame struct {
 	*widgets.QWidget
 
-	logger  logging.Logger
-	store   *uiStore
-	secrets secrets.Secrets
+	logger logging.Logger
+	store  *uiStore
 }
 
-func newUnlockFrame(store *uiStore, secrets secrets.Secrets, logger logging.Logger) *unlockFrame {
+func newUnlockFrame(store *uiStore, logger logging.Logger) *unlockFrame {
 	w := &unlockFrame{
 		QWidget: widgets.NewQWidget(nil, 0),
 
-		store:   store,
-		secrets: secrets,
-		logger:  logger.WithField("component", "unlockframe"),
+		store:  store,
+		logger: logger.WithField("component", "unlockframe"),
 	}
 
 	layout := widgets.NewQHBoxLayout2(w)

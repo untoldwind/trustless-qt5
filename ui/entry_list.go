@@ -19,16 +19,15 @@ type entryList struct {
 	secrets secrets.Secrets
 }
 
-func newEntryList(store *uiStore, secrets secrets.Secrets, logger logging.Logger) *entryList {
+func newEntryList(store *uiStore, logger logging.Logger) *entryList {
 	w := &entryList{
 		QWidget:        widgets.NewQWidget(nil, 0),
 		filter:         widgets.NewQLineEdit(nil),
 		entryList:      widgets.NewQListView(nil),
 		entryListModel: newEntryListModel(),
 
-		store:   store,
-		secrets: secrets,
-		logger:  logger.WithField("component", "entryList"),
+		store:  store,
+		logger: logger.WithField("component", "entryList"),
 	}
 
 	layout := widgets.NewQVBoxLayout2(w)

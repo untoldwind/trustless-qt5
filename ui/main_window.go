@@ -9,9 +9,8 @@ import (
 type MainWindow struct {
 	*widgets.QMainWindow
 
-	logger  logging.Logger
-	store   *uiStore
-	secrets secrets.Secrets
+	logger logging.Logger
+	store  *uiStore
 
 	stacked *widgets.QStackedWidget
 }
@@ -24,7 +23,6 @@ func NewMainWindow(secrets secrets.Secrets, logger logging.Logger) (*MainWindow,
 	w := &MainWindow{
 		QMainWindow: widgets.NewQMainWindow(nil, 0),
 		logger:      logger.WithField("package", "ui").WithField("component", "mainWindow"),
-		secrets:     secrets,
 		store:       uiStore,
 	}
 
@@ -33,8 +31,8 @@ func NewMainWindow(secrets secrets.Secrets, logger logging.Logger) (*MainWindow,
 	w.stacked = widgets.NewQStackedWidget(w)
 	w.SetCentralWidget(w.stacked)
 
-	w.stacked.AddWidget(newUnlockFrame(w.store, w.secrets, w.logger))
-	w.stacked.AddWidget(newSecretsFrame(w.store, w.secrets, w.logger))
+	w.stacked.AddWidget(newUnlockFrame(w.store, w.logger))
+	w.stacked.AddWidget(newSecretsFrame(w.store, w.logger))
 
 	w.store.addListener(w.onStateChange)
 	w.onStateChange(&w.store.current, &w.store.current)

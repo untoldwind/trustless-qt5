@@ -4,31 +4,28 @@ import (
 	"github.com/leanovate/microtools/logging"
 	"github.com/therecipe/qt/core"
 	"github.com/therecipe/qt/widgets"
-	"github.com/untoldwind/trustless/secrets"
 )
 
 type secretDetail struct {
 	*widgets.QStackedWidget
 	displayForm       *widgets.QWidget
-	displayFormLayout *widgets.QFormLayout
+	propertiesDisplay *propertiesDisplay
 
 	nameLabel *widgets.QLabel
 
-	logger  logging.Logger
-	store   *uiStore
-	secrets secrets.Secrets
+	logger logging.Logger
+	store  *uiStore
 }
 
-func newSecretDetail(store *uiStore, secrets secrets.Secrets, logger logging.Logger) *secretDetail {
+func newSecretDetail(store *uiStore, logger logging.Logger) *secretDetail {
 	w := &secretDetail{
 		QStackedWidget:    widgets.NewQStackedWidget(nil),
 		displayForm:       widgets.NewQWidget(nil, 0),
-		displayFormLayout: widgets.NewQFormLayout(nil),
 		nameLabel:         widgets.NewQLabel(nil, 0),
+		propertiesDisplay: newPropertiesDisplay(logger),
 
-		store:   store,
-		secrets: secrets,
-		logger:  logger.WithField("component", "secretDetail"),
+		store:  store,
+		logger: logger.WithField("component", "secretDetail"),
 	}
 
 	noSelectionLabel := widgets.NewQLabel2("No selection", nil, 0)
@@ -37,10 +34,12 @@ func newSecretDetail(store *uiStore, secrets secrets.Secrets, logger logging.Log
 	w.AddWidget(noSelectionLabel)
 
 	w.AddWidget(w.displayForm)
-	w.displayForm.SetLayout(w.displayFormLayout)
-	w.displayFormLayout.AddRow5(w.nameLabel)
+	displayFormLayout := widgets.NewQVBoxLayout2(w.displayForm)
+	displayFormLayout.AddWidget(w.nameLabel, 0, core.Qt__AlignLeft)
 	w.nameLabel.Font().SetBold(true)
 	w.nameLabel.Font().SetPointSize(20)
+
+	displayFormLayout.AddWidget(w.propertiesDisplay, 1, 0)
 
 	w.store.addListener(w.onStateChange)
 
@@ -54,4 +53,5 @@ func (w *secretDetail) onStateChange(prev, next *uiState) {
 	}
 	w.SetCurrentIndex(1)
 	w.nameLabel.SetText(next.currentSecret.Current.Name)
+	w.propertiesDisplay.setProperties(next.currentSecret.Current.Properties)
 }
