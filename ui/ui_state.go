@@ -11,9 +11,11 @@ import (
 
 type uiState struct {
 	locked         bool
+	identities     []api.Identity
 	allEntries     []*api.SecretEntry
 	visibleEntries []*api.SecretEntry
 	selectedEntry  *api.SecretEntry
+	currentSecret  *api.Secret
 	entryFilter    string
 }
 
@@ -25,6 +27,7 @@ type uiStore struct {
 	logger    logging.Logger
 	current   uiState
 	listeners []uiStoreListener
+	secrets   secrets.Secrets
 	actions   chan uiStoreAction
 }
 
@@ -33,17 +36,27 @@ func newUIStore(secrets secrets.Secrets, logger logging.Logger) (*uiStore, error
 	if err != nil {
 		return nil, err
 	}
+	identities, err := secrets.Identities(context.Background())
+	if err != nil {
+		return nil, err
+	}
 	store := &uiStore{
 		logger: logger.WithField("package", "ui").WithField("component", "uiStore"),
 		current: uiState{
-			locked: status.Locked,
+			locked:     status.Locked,
+			identities: identities,
 		},
+		secrets: secrets,
 		actions: make(chan uiStoreAction, 100),
 	}
 
-	go store.loop()
-
 	return store, nil
+}
+
+func (s *uiStore) currentState() uiState {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	return s.current
 }
 
 func (s *uiStore) addListener(listener uiStoreListener) {
@@ -53,14 +66,6 @@ func (s *uiStore) addListener(listener uiStoreListener) {
 }
 
 func (s *uiStore) dispatch(action uiStoreAction) {
-	select {
-	case s.actions <- action:
-	default:
-		s.logger.Error("Action queue exhausted")
-	}
-}
-
-func (s *uiStore) runAction(action uiStoreAction) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
@@ -71,11 +76,5 @@ func (s *uiStore) runAction(action uiStoreAction) {
 		for _, listener := range s.listeners {
 			listener(&prev, &s.current)
 		}
-	}
-}
-
-func (s *uiStore) loop() {
-	for action := range s.actions {
-		s.runAction(action)
 	}
 }

@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"context"
-
 	"github.com/leanovate/microtools/logging"
 	"github.com/therecipe/qt/core"
 	"github.com/therecipe/qt/gui"
@@ -45,33 +43,21 @@ func newEntryList(store *uiStore, secrets secrets.Secrets, logger logging.Logger
 
 	w.store.addListener(w.onStateChange)
 	if !w.store.current.locked {
-		w.refresh()
+		w.store.actionRefreshEntries()
 	}
 
 	return w
 }
 
 func (w *entryList) onFilterChange(event *gui.QKeyEvent) {
-	w.store.dispatch(actionUpdateEntryFilter(w.filter.Text()))
+	w.store.actionUpdateEntryFilter(w.filter.Text())
 }
 
 func (w *entryList) onCurrentChanged(current *core.QModelIndex, previous *core.QModelIndex) {
-	w.store.dispatch(actionSelectEntry(current.Data(int(entityIDRole)).ToString()))
+	w.store.actionSelectEntry(current.Data(int(entityIDRole)).ToString())
 }
 
 func (w *entryList) onStateChange(prev, next *uiState) {
-	if !next.locked && prev.locked {
-		w.refresh()
-	}
 	w.entryListModel.updateEntries(next.visibleEntries)
 	w.entryList.SetCurrentIndex(w.entryListModel.indexOf(next.selectedEntry))
-}
-
-func (w *entryList) refresh() {
-	entries, err := w.secrets.List(context.Background())
-	if err != nil {
-		w.logger.ErrorErr(err)
-		return
-	}
-	w.store.dispatch(actionUpdateEntries(entries))
 }

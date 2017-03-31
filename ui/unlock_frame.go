@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"context"
+	"fmt"
 
 	"github.com/leanovate/microtools/logging"
 	"github.com/therecipe/qt/core"
@@ -36,6 +36,16 @@ func newUnlockFrame(store *uiStore, secrets secrets.Secrets, logger logging.Logg
 	layout.AddStretch(1)
 
 	passphraseLayout.AddWidget(widgets.NewQLabel2("Store is locked", nil, 0), 0, core.Qt__AlignHCenter)
+
+	identitySelect := widgets.NewQComboBox(nil)
+	passphraseLayout.AddWidget(identitySelect, 0, core.Qt__AlignVCenter)
+	identities := w.store.currentState().identities
+	identityItems := make([]string, len(identities))
+	for i, identity := range identities {
+		identityItems[i] = fmt.Sprintf("%s <%s>", identity.Name, identity.Email)
+	}
+	identitySelect.AddItems(identityItems)
+
 	passphrase := widgets.NewQLineEdit(nil)
 	passphrase.SetEchoMode(widgets.QLineEdit__Password)
 	passphraseLayout.AddWidget(passphrase, 0, core.Qt__AlignVCenter)
@@ -45,11 +55,9 @@ func newUnlockFrame(store *uiStore, secrets secrets.Secrets, logger logging.Logg
 	passphraseError.SetForegroundRole(gui.QPalette__Highlight)
 
 	passphrase.ConnectReturnPressed(func() {
-		if err := w.secrets.Unlock(context.Background(), "Bodo Junglas", "junglas@objectcode.de", passphrase.Text()); err != nil {
-			w.logger.ErrorErr(err)
+		identity := identities[identitySelect.CurrentIndex()]
+		if err := w.store.actionUnlock(identity, passphrase.Text()); err != nil {
 			passphraseError.SetVisible(true)
-		} else {
-			w.store.dispatch(actionUnlock)
 		}
 	})
 

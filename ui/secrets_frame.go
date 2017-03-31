@@ -8,7 +8,8 @@ import (
 
 type secretsFrame struct {
 	*widgets.QWidget
-	entryList *entryList
+	entryList    *entryList
+	secretDetail *secretDetail
 
 	logger  logging.Logger
 	store   *uiStore
@@ -17,8 +18,9 @@ type secretsFrame struct {
 
 func newSecretsFrame(store *uiStore, secrets secrets.Secrets, logger logging.Logger) *secretsFrame {
 	w := &secretsFrame{
-		QWidget:   widgets.NewQWidget(nil, 0),
-		entryList: newEntryList(store, secrets, logger),
+		QWidget:      widgets.NewQWidget(nil, 0),
+		entryList:    newEntryList(store, secrets, logger),
+		secretDetail: newSecretDetail(store, secrets, logger),
 
 		store:   store,
 		secrets: secrets,
@@ -32,7 +34,7 @@ func newSecretsFrame(store *uiStore, secrets secrets.Secrets, logger logging.Log
 
 	splitter.AddWidget(w.entryList)
 
-	splitter.AddWidget(widgets.NewQLabel2("Hubba", nil, 0))
+	splitter.AddWidget(w.secretDetail)
 
 	return w
 }
