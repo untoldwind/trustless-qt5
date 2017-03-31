@@ -57,6 +57,7 @@ func newUnlockFrame(store *uiStore, logger logging.Logger) *unlockFrame {
 			passphraseError.SetVisible(true)
 		}
 	})
+	w.SetTabOrder(passphrase, identitySelect)
 
 	return w
 }

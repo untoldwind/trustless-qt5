@@ -39,7 +39,7 @@ func newValueDisplay(value string, blurred bool, logger logging.Logger) *valueDi
 	actions := widgets.NewQMenu(nil)
 	actionButton.SetMenu(actions)
 	actions.AddAction("Copy").ConnectTriggered(func(checked bool) {
-		copyToClipboard(value)
+		safeCopyToClipboard(value)
 	})
 	if blurred {
 		actions.AddAction("Reveal").ConnectTriggered(func(checked bool) {
@@ -48,13 +48,13 @@ func newValueDisplay(value string, blurred bool, logger logging.Logger) *valueDi
 	}
 
 	actionButton.ConnectClicked(func(checked bool) {
-		copyToClipboard(value)
+		safeCopyToClipboard(value)
 	})
 
 	return w
 }
 
-func copyToClipboard(value string) {
+func safeCopyToClipboard(value string) {
 	clipboard := gui.QGuiApplication_Clipboard()
 	clipboard.SetText(value, gui.QClipboard__Clipboard)
 	clipboard.SetText(value, gui.QClipboard__Selection)

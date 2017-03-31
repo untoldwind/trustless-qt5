@@ -6,8 +6,12 @@ VERSION ?= $(shell date -u +%Y%m%d.%H%M%S)VERSION ?= $(shell date -u +%Y%m%d.%H%
 all: format
 	@mkdir -p bin
 	@echo "--> Running go build ${VERSION}"
-#	@go build -ldflags "-w -X github.com/untoldwind/trustless-qt5/config.version=${VERSION}" -v -i -o bin/trustless-qt5 -tags=minimal github.com/untoldwind/trustless-qt5
 	@go build -v -i -o bin/trustless-qt5 github.com/untoldwind/trustless-qt5
+
+minimal: format
+	@qtminimal desktop .
+	@go build -v -i -tags=minimal -o bin/trustless-qt5 github.com/untoldwind/trustless-qt5
+
 
 #format: export GOPATH=${PWD}/../../../..
 format:
