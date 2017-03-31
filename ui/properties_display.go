@@ -1,12 +1,25 @@
 package ui
 
 import (
-	"fmt"
 	"sort"
 
 	"github.com/leanovate/microtools/logging"
 	"github.com/therecipe/qt/widgets"
 )
+
+type propertyDefinition struct {
+	display string
+	hidden  bool
+	blurred bool
+}
+
+var propertyDefinitions = map[string]propertyDefinition{
+	"Tags":     {hidden: true},
+	"name":     {hidden: true},
+	"type":     {hidden: true},
+	"username": {display: "Username"},
+	"password": {display: "Password", blurred: true},
+}
 
 type propertiesDisplay struct {
 	*widgets.QScrollArea
@@ -32,11 +45,17 @@ func (w *propertiesDisplay) setProperties(properties map[string]string) {
 	for name := range properties {
 		names = append(names, name)
 	}
-	fmt.Println(names)
 	sort.Strings(names)
 	for _, name := range names {
 		value := properties[name]
-		layout.AddRow3(name, widgets.NewQLabel2(value, nil, 0))
+		if propertyDefinition, ok := propertyDefinitions[name]; ok {
+			if propertyDefinition.hidden {
+				continue
+			}
+			layout.AddRow3(propertyDefinition.display, newValueDisplay(value, propertyDefinition.blurred, w.logger))
+		} else {
+			layout.AddRow3(name, newValueDisplay(value, false, w.logger))
+		}
 	}
 
 	w.SetWidget(form)
